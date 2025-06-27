@@ -47,4 +47,4 @@ class TimeSlotPolicy
     {
         return $user->isConsultant() && $user->id === $timeSlot->consultant_id;
     }
-} 
+}

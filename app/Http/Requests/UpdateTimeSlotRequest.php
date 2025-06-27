@@ -11,8 +11,7 @@ class UpdateTimeSlotRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $timeSlot = $this->route('time_slot');
-        return $timeSlot && $this->user()->can('update', $timeSlot);
+        return true;
     }
 
     /**
@@ -38,4 +37,4 @@ class UpdateTimeSlotRequest extends FormRequest
             'end_time.after' => 'End time must be after start time.',
         ];
     }
-} 
+}

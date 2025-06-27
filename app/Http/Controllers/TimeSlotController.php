@@ -37,6 +37,12 @@ class TimeSlotController extends Controller
      */
     public function store(StoreTimeSlotRequest $request): JsonResponse
     {
+        // Check authorization
+        if (!$request->user()->can('create', TimeSlot::class)) {
+            return response()->json([
+                'message' => 'Only consultants can create time slots',
+            ], 403);
+        }
 
         $startTime = Carbon::parse($request->start_time);
         $endTime = Carbon::parse($request->end_time);
@@ -69,18 +75,36 @@ class TimeSlotController extends Controller
     /**
      * Display the specified time slot
      */
-    public function show(TimeSlot $timeSlot): JsonResponse
+    public function show($timeSlotId): JsonResponse
     {
+        $timeSlot = TimeSlot::find($timeSlotId);
+   
         return response()->json([
-            'data' => $timeSlot->load(['consultant:id,name', 'reservation.user:id,name']),
+            'data' => $timeSlot,
         ]);
     }
 
     /**
      * Update the specified time slot (consultant only)
      */
-    public function update(UpdateTimeSlotRequest $request, TimeSlot $timeSlot): JsonResponse
+    public function update(UpdateTimeSlotRequest $request, $timeSlotId): JsonResponse
     {
+        // Manually load the time slot to avoid route model binding issues
+        $timeSlot = TimeSlot::find($timeSlotId);
+        
+        if (!$timeSlot) {
+            return response()->json([
+                'message' => 'Time slot not found',
+            ], 404);
+        }
+        
+        // Check authorization
+        if (!$request->user()->can('update', $timeSlot)) {
+            return response()->json([
+                'message' => 'You can only update your own time slots',
+            ], 403);
+        }
+
         // Check if time slot is already reserved
         if (!$timeSlot->isAvailable()) {
             return response()->json([
