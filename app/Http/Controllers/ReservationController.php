@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\TimeSlot;
 use App\Events\ReservationCreated;
+use App\Http\Requests\StoreReservationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -17,9 +18,9 @@ class ReservationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if (!$request->user()->isClient()) {
+        if (!$request->user()->can('viewAny', Reservation::class)) {
             return response()->json([
-                'message' => 'Only clients can view reservations',
+                'message' => 'You are not authorized to view reservations',
             ], 403);
         }
 
@@ -36,18 +37,8 @@ class ReservationController extends Controller
     /**
      * Store a newly created reservation (client only)
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreReservationRequest $request): JsonResponse
     {
-        // Check if user is client
-        if (!$request->user()->isClient()) {
-            return response()->json([
-                'message' => 'Only clients can make reservations',
-            ], 403);
-        }
-
-        $request->validate([
-            'time_slot_id' => 'required|exists:time_slots,id',
-        ]);
 
         $timeSlot = TimeSlot::findOrFail($request->time_slot_id);
 
@@ -121,12 +112,8 @@ class ReservationController extends Controller
      */
     public function show(Request $request, Reservation $reservation): JsonResponse
     {
-        // Check if user owns this reservation or is the consultant
-        $user = $request->user();
-        $isOwner = $reservation->user_id === $user->id;
-        $isConsultant = $user->isConsultant() && $reservation->timeSlot->consultant_id === $user->id;
-
-        if (!$isOwner && !$isConsultant) {
+        // Check authorization using Policy
+        if (!$request->user()->can('view', $reservation)) {
             return response()->json([
                 'message' => 'You can only view your own reservations or reservations for your time slots',
             ], 403);
@@ -142,8 +129,8 @@ class ReservationController extends Controller
      */
     public function destroy(Request $request, Reservation $reservation): JsonResponse
     {
-        // Check if user owns this reservation
-        if ($reservation->user_id !== $request->user()->id) {
+        // Check authorization using Policy
+        if (!$request->user()->can('delete', $reservation)) {
             return response()->json([
                 'message' => 'You can only cancel your own reservations',
             ], 403);
@@ -171,7 +158,7 @@ class ReservationController extends Controller
      */
     public function future(Request $request): JsonResponse
     {
-        if (!$request->user()->isClient()) {
+        if (!$request->user()->can('viewAny', Reservation::class) || !$request->user()->isClient()) {
             return response()->json([
                 'message' => 'Only clients can view future reservations',
             ], 403);
@@ -193,7 +180,7 @@ class ReservationController extends Controller
      */
     public function consultantReservations(Request $request): JsonResponse
     {
-        if (!$request->user()->isConsultant()) {
+        if (!$request->user()->can('viewAny', Reservation::class) || !$request->user()->isConsultant()) {
             return response()->json([
                 'message' => 'Only consultants can view their reservations',
             ], 403);

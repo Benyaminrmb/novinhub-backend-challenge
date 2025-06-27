@@ -1,0 +1,482 @@
+{
+    "info": {
+        "_postman_id": "novinhub-backend-api",
+        "name": "Novinhub Backend API",
+        "description": "Complete API collection for Novinhub Backend Challenge - Consultation Time Slot Reservation System",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register Client",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"role\": \"client\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "register"]
+                        },
+                        "description": "Register a new client user"
+                    }
+                },
+                {
+                    "name": "Register Consultant",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Dr. Jane Smith\",\n    \"email\": \"jane@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"role\": \"consultant\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "register"]
+                        },
+                        "description": "Register a new consultant user"
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('auth_token', response.token);",
+                                    "    pm.environment.set('user_id', response.user.id);",
+                                    "    pm.environment.set('user_role', response.user.role);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "login"]
+                        },
+                        "description": "Login user and automatically save auth token"
+                    }
+                },
+                {
+                    "name": "Get User Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/user",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "user"]
+                        },
+                        "description": "Get authenticated user profile"
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/logout",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "logout"]
+                        },
+                        "description": "Logout user and invalidate token"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Time Slots",
+            "item": [
+                {
+                    "name": "Get Available Time Slots (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots/available",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots", "available"]
+                        },
+                        "description": "Get all available time slots (public endpoint, no auth required)"
+                    }
+                },
+                {
+                    "name": "Get Consultant's Time Slots",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots"]
+                        },
+                        "description": "Get consultant's own time slots (consultant only)"
+                    }
+                },
+                {
+                    "name": "Create Time Slot",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('time_slot_id', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"start_time\": \"2024-12-31 14:00:00\",\n    \"end_time\": \"2024-12-31 15:00:00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots"]
+                        },
+                        "description": "Create a new time slot (consultant only). Time must be in future."
+                    }
+                },
+                {
+                    "name": "Get Time Slot Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots/{{time_slot_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots", "{{time_slot_id}}"]
+                        },
+                        "description": "Get specific time slot details with consultant and reservation info"
+                    }
+                },
+                {
+                    "name": "Update Time Slot",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"start_time\": \"2024-12-31 15:00:00\",\n    \"end_time\": \"2024-12-31 16:00:00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots/{{time_slot_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots", "{{time_slot_id}}"]
+                        },
+                        "description": "Update time slot (consultant owner only, cannot update reserved slots)"
+                    }
+                },
+                {
+                    "name": "Delete Time Slot",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/timeslots/{{time_slot_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "timeslots", "{{time_slot_id}}"]
+                        },
+                        "description": "Delete time slot (consultant owner only, cannot delete reserved slots)"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reservations",
+            "item": [
+                {
+                    "name": "Get User's Reservations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/reservations",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "reservations"]
+                        },
+                        "description": "Get all reservations for the authenticated user (client only)"
+                    }
+                },
+                {
+                    "name": "Create Reservation",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 201) {",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('reservation_id', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"time_slot_id\": {{time_slot_id}}\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/reservations",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "reservations"]
+                        },
+                        "description": "Create a new reservation (client only). Time slot must be available and in future."
+                    }
+                },
+                {
+                    "name": "Get Reservation Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/reservations/{{reservation_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "reservations", "{{reservation_id}}"]
+                        },
+                        "description": "Get specific reservation details (owner or consultant only)"
+                    }
+                },
+                {
+                    "name": "Cancel Reservation",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/reservations/{{reservation_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "reservations", "{{reservation_id}}"]
+                        },
+                        "description": "Cancel reservation (owner only, future reservations only)"
+                    }
+                },
+                {
+                    "name": "Get Future Reservations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/reservations/future",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "reservations", "future"]
+                        },
+                        "description": "Get user's future reservations only (client only)"
+                    }
+                },
+                {
+                    "name": "Get Consultant's Reservations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/consultant/reservations",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "consultant", "reservations"]
+                        },
+                        "description": "Get all reservations for consultant's time slots (consultant only)"
+                    }
+                }
+            ]
+        }
+    ]
+}

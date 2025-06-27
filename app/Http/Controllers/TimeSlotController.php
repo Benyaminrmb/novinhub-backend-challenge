@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\TimeSlot;
+use App\Http\Requests\StoreTimeSlotRequest;
+use App\Http\Requests\UpdateTimeSlotRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -33,19 +35,8 @@ class TimeSlotController extends Controller
     /**
      * Store a newly created time slot (consultant only)
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTimeSlotRequest $request): JsonResponse
     {
-        // Check if user is consultant
-        if (!$request->user()->isConsultant()) {
-            return response()->json([
-                'message' => 'Only consultants can create time slots',
-            ], 403);
-        }
-
-        $request->validate([
-            'start_time' => 'required|date|after:now',
-            'end_time' => 'required|date|after:start_time',
-        ]);
 
         $startTime = Carbon::parse($request->start_time);
         $endTime = Carbon::parse($request->end_time);
@@ -88,26 +79,14 @@ class TimeSlotController extends Controller
     /**
      * Update the specified time slot (consultant only)
      */
-    public function update(Request $request, TimeSlot $timeSlot): JsonResponse
+    public function update(UpdateTimeSlotRequest $request, TimeSlot $timeSlot): JsonResponse
     {
-        // Check if user is the owner of the time slot
-        if ($request->user()->id !== $timeSlot->consultant_id) {
-            return response()->json([
-                'message' => 'You can only update your own time slots',
-            ], 403);
-        }
-
         // Check if time slot is already reserved
         if (!$timeSlot->isAvailable()) {
             return response()->json([
                 'message' => 'Cannot update a reserved time slot',
             ], 422);
         }
-
-        $request->validate([
-            'start_time' => 'required|date|after:now',
-            'end_time' => 'required|date|after:start_time',
-        ]);
 
         $startTime = Carbon::parse($request->start_time);
         $endTime = Carbon::parse($request->end_time);
@@ -141,8 +120,8 @@ class TimeSlotController extends Controller
      */
     public function destroy(Request $request, TimeSlot $timeSlot): JsonResponse
     {
-        // Check if user is the owner of the time slot
-        if ($request->user()->id !== $timeSlot->consultant_id) {
+        // Check authorization using Policy
+        if (!$request->user()->can('delete', $timeSlot)) {
             return response()->json([
                 'message' => 'You can only delete your own time slots',
             ], 403);
@@ -170,7 +149,7 @@ class TimeSlotController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if (!$request->user()->isConsultant()) {
+        if (!$request->user()->can('viewAny', TimeSlot::class) || !$request->user()->isConsultant()) {
             return response()->json([
                 'message' => 'Only consultants can view their time slots',
             ], 403);

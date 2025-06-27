@@ -4,7 +4,12 @@ namespace App\Providers;
 
 use App\Events\ReservationCreated;
 use App\Listeners\SendReservationConfirmation;
+use App\Models\TimeSlot;
+use App\Models\Reservation;
+use App\Policies\TimeSlotPolicy;
+use App\Policies\ReservationPolicy;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,5 +32,9 @@ class AppServiceProvider extends ServiceProvider
             ReservationCreated::class,
             [SendReservationConfirmation::class, 'handle']
         );
+
+        // Register Policies
+        Gate::policy(TimeSlot::class, TimeSlotPolicy::class);
+        Gate::policy(Reservation::class, ReservationPolicy::class);
     }
 }
