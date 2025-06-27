@@ -40,7 +40,14 @@ class TimeSlotApiTest extends TestCase
                         'id',
                         'start_time',
                         'end_time',
-                        'consultant' => ['id', 'name']
+                        'duration_minutes',
+                        'formatted_time',
+                        'date',
+                        'day_of_week',
+                        'time_range',
+                        'consultant' => ['id', 'name', 'email'],
+                        'can_book',
+                        'status'
                     ]
                 ]
             ])
@@ -70,13 +77,24 @@ class TimeSlotApiTest extends TestCase
                     'consultant_id',
                     'start_time',
                     'end_time',
-                    'consultant' => ['id', 'name']
+                    'is_available',
+                    'is_future',
+                    'duration_minutes',
+                    'created_at',
+                    'updated_at',
+                    'consultant' => [
+                        'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                        'email_verified_at', 'created_at', 'updated_at'
+                    ],
+                    'status'
                 ]
             ])
             ->assertJson([
                 'message' => 'Time slot created successfully',
                 'data' => [
                     'consultant_id' => $this->consultant->id,
+                    'is_available' => true,
+                    'is_future' => true,
                 ]
             ]);
 
@@ -180,8 +198,21 @@ class TimeSlotApiTest extends TestCase
                         'id',
                         'consultant_id',
                         'start_time',
-                        'end_time'
+                        'end_time',
+                        'is_available',
+                        'is_future',
+                        'duration_minutes',
+                        'created_at',
+                        'updated_at',
+                        'status'
                     ]
+                ],
+                'meta' => [
+                    'total',
+                    'available_count',
+                    'reserved_count',
+                    'future_count',
+                    'available_future_count'
                 ]
             ])
             ->assertJsonFragment([
@@ -225,6 +256,22 @@ class TimeSlotApiTest extends TestCase
         dump("Response Body: " . $response->getContent());
 
         $response->assertStatus(200)
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'id',
+                    'consultant_id',
+                    'start_time',
+                    'end_time',
+                    'is_available',
+                    'is_future',
+                    'duration_minutes',
+                    'created_at',
+                    'updated_at',
+                    'consultant',
+                    'status'
+                ]
+            ])
             ->assertJson([
                 'message' => 'Time slot updated successfully',
                 'data' => [

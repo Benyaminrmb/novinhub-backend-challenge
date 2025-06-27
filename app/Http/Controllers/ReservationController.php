@@ -6,6 +6,8 @@ use App\Models\Reservation;
 use App\Models\TimeSlot;
 use App\Events\ReservationCreated;
 use App\Http\Requests\StoreReservationRequest;
+use App\Http\Resources\ReservationResource;
+use App\Http\Resources\ReservationCollection;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -16,22 +18,20 @@ class ReservationController extends Controller
     /**
      * Display user's reservations
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
-        if (!$request->user()->can('viewAny', Reservation::class)) {
+        if (!$request->user()->can('viewAny', Reservation::class) || !$request->user()->isClient()) {
             return response()->json([
-                'message' => 'You are not authorized to view reservations',
+                'message' => 'Only clients can view reservations',
             ], 403);
         }
 
         $reservations = Reservation::forUser($request->user()->id)
-            ->with(['timeSlot.consultant:id,name'])
+            ->with(['timeSlot.consultant', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'data' => $reservations,
-        ]);
+        return new ReservationCollection($reservations);
     }
 
     /**
@@ -39,6 +39,12 @@ class ReservationController extends Controller
      */
     public function store(StoreReservationRequest $request): JsonResponse
     {
+        // Check authorization explicitly to provide custom error message
+        if (!$request->user()->can('create', Reservation::class)) {
+            return response()->json([
+                'message' => 'Only clients can make reservations',
+            ], 403);
+        }
 
         $timeSlot = TimeSlot::findOrFail($request->time_slot_id);
 
@@ -94,7 +100,7 @@ class ReservationController extends Controller
 
             return response()->json([
                 'message' => 'Reservation created successfully',
-                'data' => $reservation->load(['timeSlot.consultant:id,name']),
+                'data' => new ReservationResource($reservation->load(['timeSlot.consultant', 'user'])),
             ], 201);
 
         } catch (\Exception $e) {
@@ -120,7 +126,7 @@ class ReservationController extends Controller
         }
 
         return response()->json([
-            'data' => $reservation->load(['timeSlot.consultant:id,name', 'user:id,name']),
+            'data' => new ReservationResource($reservation->load(['timeSlot.consultant', 'user'])),
         ]);
     }
 
@@ -156,7 +162,7 @@ class ReservationController extends Controller
     /**
      * Get future reservations for a user
      */
-    public function future(Request $request): JsonResponse
+    public function future(Request $request)
     {
         if (!$request->user()->can('viewAny', Reservation::class) || !$request->user()->isClient()) {
             return response()->json([
@@ -166,19 +172,17 @@ class ReservationController extends Controller
 
         $reservations = Reservation::forUser($request->user()->id)
             ->future()
-            ->with(['timeSlot.consultant:id,name'])
+            ->with(['timeSlot.consultant', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'data' => $reservations,
-        ]);
+        return new ReservationCollection($reservations);
     }
 
     /**
      * Get reservations for consultant's time slots
      */
-    public function consultantReservations(Request $request): JsonResponse
+    public function consultantReservations(Request $request)
     {
         if (!$request->user()->can('viewAny', Reservation::class) || !$request->user()->isConsultant()) {
             return response()->json([
@@ -189,12 +193,10 @@ class ReservationController extends Controller
         $reservations = Reservation::whereHas('timeSlot', function ($query) use ($request) {
                 $query->where('consultant_id', $request->user()->id);
             })
-            ->with(['timeSlot:id,start_time,end_time', 'user:id,name'])
+            ->with(['timeSlot.consultant', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'data' => $reservations,
-        ]);
+        return new ReservationCollection($reservations);
     }
 }

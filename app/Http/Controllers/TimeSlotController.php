@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\TimeSlot;
 use App\Http\Requests\StoreTimeSlotRequest;
 use App\Http\Requests\UpdateTimeSlotRequest;
+use App\Http\Resources\AvailableTimeSlotResource;
+use App\Http\Resources\TimeSlotResource;
+use App\Http\Resources\TimeSlotCollection;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -15,7 +18,7 @@ class TimeSlotController extends Controller
     /**
      * Display available time slots
      */
-    public function available(): JsonResponse
+    public function available()
     {
         // Try to get from cache first
         $cacheKey = 'available_time_slots';
@@ -27,9 +30,7 @@ class TimeSlotController extends Controller
                 ->get();
         });
 
-        return response()->json([
-            'data' => $timeSlots,
-        ]);
+        return AvailableTimeSlotResource::collection($timeSlots);
     }
 
     /**
@@ -68,7 +69,7 @@ class TimeSlotController extends Controller
 
         return response()->json([
             'message' => 'Time slot created successfully',
-            'data' => $timeSlot->load('consultant:id,name'),
+            'data' => new TimeSlotResource($timeSlot->load('consultant')),
         ], 201);
     }
 
@@ -77,10 +78,16 @@ class TimeSlotController extends Controller
      */
     public function show($timeSlotId): JsonResponse
     {
-        $timeSlot = TimeSlot::find($timeSlotId);
+        $timeSlot = TimeSlot::with(['consultant', 'reservation'])->find($timeSlotId);
+        
+        if (!$timeSlot) {
+            return response()->json([
+                'message' => 'Time slot not found',
+            ], 404);
+        }
    
         return response()->json([
-            'data' => $timeSlot,
+            'data' => new TimeSlotResource($timeSlot),
         ]);
     }
 
@@ -135,15 +142,24 @@ class TimeSlotController extends Controller
 
         return response()->json([
             'message' => 'Time slot updated successfully',
-            'data' => $timeSlot->load('consultant:id,name'),
+            'data' => new TimeSlotResource($timeSlot->load('consultant')),
         ]);
     }
 
     /**
      * Remove the specified time slot (consultant only)
      */
-    public function destroy(Request $request, TimeSlot $timeSlot): JsonResponse
+    public function destroy(Request $request, $timeSlotId): JsonResponse
     {
+        // Manually load the time slot to avoid route model binding issues
+        $timeSlot = TimeSlot::find($timeSlotId);
+        
+        if (!$timeSlot) {
+            return response()->json([
+                'message' => 'Time slot not found',
+            ], 404);
+        }
+
         // Check authorization using Policy
         if (!$request->user()->can('delete', $timeSlot)) {
             return response()->json([
@@ -171,7 +187,7 @@ class TimeSlotController extends Controller
     /**
      * Get consultant's own time slots
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         if (!$request->user()->can('viewAny', TimeSlot::class) || !$request->user()->isConsultant()) {
             return response()->json([
@@ -180,12 +196,10 @@ class TimeSlotController extends Controller
         }
 
         $timeSlots = TimeSlot::forConsultant($request->user()->id)
-            ->with('reservation.user:id,name')
+            ->with(['consultant', 'reservation.user'])
             ->orderBy('start_time')
             ->get();
 
-        return response()->json([
-            'data' => $timeSlots,
-        ]);
+        return new TimeSlotCollection($timeSlots);
     }
 }

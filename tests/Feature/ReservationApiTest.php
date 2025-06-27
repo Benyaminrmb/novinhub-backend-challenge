@@ -50,12 +50,20 @@ class ReservationApiTest extends TestCase
                     'id',
                     'user_id',
                     'time_slot_id',
+                    'created_at',
+                    'updated_at',
+                    'user' => [
+                        'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                        'email_verified_at', 'created_at', 'updated_at'
+                    ],
                     'time_slot' => [
-                        'id',
-                        'start_time',
-                        'end_time',
-                        'consultant' => ['id', 'name']
-                    ]
+                        'id', 'consultant_id', 'start_time', 'end_time', 'is_available',
+                        'is_future', 'duration_minutes', 'created_at', 'updated_at', 'status'
+                    ],
+                    'consultant_name',
+                    'client_name',
+                    'appointment_time',
+                    'status'
                 ]
             ])
             ->assertJson([
@@ -85,7 +93,7 @@ class ReservationApiTest extends TestCase
             ]);
 
         $response->assertStatus(403)
-            ->assertJson(['message' => 'Only clients can make reservations']);
+            ->assertJson(['message' => 'This action is unauthorized.']);
     }
 
     public function test_cannot_reserve_past_time_slot()
@@ -191,10 +199,18 @@ class ReservationApiTest extends TestCase
                         'id',
                         'user_id',
                         'time_slot_id',
-                        'time_slot' => [
-                            'consultant' => ['id', 'name']
-                        ]
+                        'created_at',
+                        'updated_at',
+                        'consultant_name',
+                        'client_name',
+                        'appointment_time',
+                        'status'
                     ]
+                ],
+                'meta' => [
+                    'total',
+                    'upcoming_count',
+                    'completed_count'
                 ]
             ])
             ->assertJsonFragment([
@@ -242,6 +258,26 @@ class ReservationApiTest extends TestCase
             ->getJson('/api/reservations/future');
 
         $response->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => [
+                        'id',
+                        'user_id',
+                        'time_slot_id',
+                        'created_at',
+                        'updated_at',
+                        'consultant_name',
+                        'client_name',
+                        'appointment_time',
+                        'status'
+                    ]
+                ],
+                'meta' => [
+                    'total',
+                    'upcoming_count',
+                    'completed_count'
+                ]
+            ])
             ->assertJsonCount(1, 'data')
             ->assertJsonFragment(['id' => $futureReservation->id]);
             
@@ -328,9 +364,18 @@ class ReservationApiTest extends TestCase
                         'id',
                         'user_id',
                         'time_slot_id',
-                        'time_slot' => ['id', 'start_time', 'end_time'],
-                        'user' => ['id', 'name']
+                        'created_at',
+                        'updated_at',
+                        'consultant_name',
+                        'client_name',
+                        'appointment_time',
+                        'status'
                     ]
+                ],
+                'meta' => [
+                    'total',
+                    'upcoming_count',
+                    'completed_count'
                 ]
             ])
             ->assertJsonFragment([

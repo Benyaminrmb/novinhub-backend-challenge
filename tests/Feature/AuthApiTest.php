@@ -26,7 +26,10 @@ class AuthApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonStructure([
                 'message',
-                'user' => ['id', 'name', 'email', 'role'],
+                'user' => [
+                    'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                    'email_verified_at', 'created_at', 'updated_at'
+                ],
                 'token'
             ])
             ->assertJson([
@@ -35,6 +38,8 @@ class AuthApiTest extends TestCase
                     'name' => $userData['name'],
                     'email' => $userData['email'],
                     'role' => 'consultant',
+                    'is_consultant' => true,
+                    'is_client' => false,
                 ]
             ]);
 
@@ -59,13 +64,18 @@ class AuthApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonStructure([
                 'message',
-                'user' => ['id', 'name', 'email', 'role'],
+                'user' => [
+                    'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                    'email_verified_at', 'created_at', 'updated_at'
+                ],
                 'token'
             ])
             ->assertJson([
                 'message' => 'Registration successful',
                 'user' => [
                     'role' => 'client',
+                    'is_consultant' => false,
+                    'is_client' => true,
                 ]
             ]);
     }
@@ -127,7 +137,10 @@ class AuthApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'message',
-                'user' => ['id', 'name', 'email', 'role'],
+                'user' => [
+                    'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                    'email_verified_at', 'created_at', 'updated_at'
+                ],
                 'token'
             ])
             ->assertJson([
@@ -190,12 +203,19 @@ class AuthApiTest extends TestCase
             ->getJson('/api/user');
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['user' => ['id', 'name', 'email', 'role']])
+            ->assertJsonStructure([
+                'user' => [
+                    'id', 'name', 'email', 'role', 'is_consultant', 'is_client',
+                    'email_verified_at', 'created_at', 'updated_at'
+                ]
+            ])
             ->assertJson([
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
                     'role' => 'consultant',
+                    'is_consultant' => true,
+                    'is_client' => false,
                 ]
             ]);
     }
